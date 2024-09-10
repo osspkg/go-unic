@@ -1,3 +1,3 @@
-module go.osspkg.com/coma
+module go.osspkg.com/unic
 
-go 1.20
+go 1.22.5
