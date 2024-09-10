@@ -1,4 +1,4 @@
-# go-coma
+# go-unic
 
-Configuration markup language
+Universal Configuration Format
 
