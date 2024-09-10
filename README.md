@@ -1,1 +1,4 @@
-# go-coma
+# go-unic
+
+Universal Configuration Format
+
