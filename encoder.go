@@ -1,19 +1,34 @@
 package unic
 
-import "io"
+import (
+	"io"
+
+	"go.osspkg.com/unic/internal/encode"
+	"go.osspkg.com/unic/internal/node"
+	"go.osspkg.com/unic/internal/ref"
+)
 
 type Encoder struct {
-	w io.Writer
+	enc *encode.Encoder
 }
 
 func NewEncoder(w io.Writer) *Encoder {
-	return &Encoder{w: w}
-}
-
-func (e *Encoder) Done() error {
-	return nil
+	return &Encoder{
+		enc: encode.New(w),
+	}
 }
 
 func (e *Encoder) Encode(v interface{}) error {
-	return nil
+	reference, err := ref.New(v)
+	if err != nil {
+		return err
+	}
+
+	b := node.NewBlock()
+
+	if err = reference.Marshal(b); err != nil {
+		return err
+	}
+
+	return e.enc.Encode(b.Root())
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"go.osspkg.com/casecheck"
+	"go.osspkg.com/unic/internal/node"
 	"go.osspkg.com/unic/internal/ref"
 )
 
@@ -34,6 +35,9 @@ func TestUnit_New(t *testing.T) {
 
 	_, err = ref.New(&testType1{})
 	casecheck.NoError(t, err)
+
+	_, err = ref.New(0)
+	casecheck.Error(t, err)
 }
 
 func TestUnit_Resolve(t *testing.T) {
@@ -50,5 +54,6 @@ func TestUnit_Resolve(t *testing.T) {
 	res, err := ref.New(&data)
 	casecheck.NoError(t, err)
 
-	casecheck.NoError(t, res.Marshal())
+	b := node.NewBlock()
+	casecheck.NoError(t, res.Marshal(b))
 }

@@ -8,9 +8,6 @@ func Marshal(in interface{}) ([]byte, error) {
 	if err := enc.Encode(in); err != nil {
 		return nil, err
 	}
-	if err := enc.Done(); err != nil {
-		return nil, err
-	}
 	return buf.Bytes(), nil
 }
 

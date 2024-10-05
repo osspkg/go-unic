@@ -9,8 +9,12 @@ func NewKey() *Key {
 	return &Key{}
 }
 
-func (v *Key) IsValid() bool {
+func (v *Key) NoKey() bool {
 	return len(v.key) == 0
+}
+
+func (v *Key) NoValue() bool {
+	return len(v.values) == 0
 }
 
 func (v *Key) Set(s string) {

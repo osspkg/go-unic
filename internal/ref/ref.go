@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"go.osspkg.com/unic/internal/node"
 )
 
 const (
@@ -16,25 +18,30 @@ type Ref struct {
 
 func New(obj any) (*Ref, error) {
 	refValue := reflect.ValueOf(obj)
-	if refValue.Kind() != reflect.Ptr || refValue.IsNil() {
-		return nil, fmt.Errorf("got non-pointer or nil-pointer object")
-	}
 
-	refType := refValue.Type().Elem()
-	if refType.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("pointer must be a strict")
+	switch refValue.Kind() {
+	case reflect.Ptr:
+		if refValue.IsNil() {
+			return nil, fmt.Errorf("got nil-pointer object")
+		}
+		refType := refValue.Type().Elem()
+		if refType.Kind() != reflect.Struct {
+			return nil, fmt.Errorf("object must be a strict: %s", refValue.Type().String())
+		}
+		return &Ref{obj: refValue}, nil
+	case reflect.Struct:
+		return &Ref{obj: refValue}, nil
+	default:
+		return nil, fmt.Errorf("got unsupported type: %s", refValue.Type().String())
 	}
-
-	return &Ref{obj: refValue}, nil
 }
 
-func (v *Ref) Marshal() error {
+func (v *Ref) Marshal(b *node.Block) error {
 	data := &Data{}
 	if err := v.parseRef(v.obj, data); err != nil {
 		return err
 	}
-	data.Root().Dump(1)
-	return nil
+	return data.Root().Dump(1, b)
 }
 
 func (v *Ref) Unmarshal() error {
@@ -59,12 +66,17 @@ func (v *Ref) parseRef(ref reflect.Value, data *Data) (err error) {
 }
 
 func (v *Ref) parsePointer(ref reflect.Value, data *Data) error {
-	if ref.IsZero() {
-		ref.Set(reflect.New(ref.Type().Elem()))
+	data.CanNil = true
+
+	if ref.IsNil() {
+		if ref.CanSet() {
+			ref.Set(reflect.New(ref.Type().Elem()))
+		} else {
+			return nil
+		}
 	}
 
 	ref = ref.Elem()
-	data.IsOmit = true
 
 	switch ref.Kind() {
 	case reflect.Struct:

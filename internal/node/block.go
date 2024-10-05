@@ -37,6 +37,11 @@ func (v *Block) PreviousBlock() (b *Block) {
 	b = v
 	if b.parent != nil {
 		b = v.parent
+		if v.Key().NoKey() {
+			b.child = b.child[:len(b.child)-1]
+		} else if v.Key().NoValue() && !v.HasChild() {
+			b.child = b.child[:len(b.child)-1]
+		}
 	}
 	return
 }
