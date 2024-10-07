@@ -59,18 +59,18 @@ func (v *Decoder) Decode() error {
 
 		switch next {
 		case caseOpen:
-			v.block = v.block.NextBlock()
+			v.block = v.block.Next()
 			v.block.Key().Set(data)
 			next = caseValue
 		case caseClose:
-			v.block = v.block.PreviousBlock()
+			v.block = v.block.Previous()
 			next = caseOpen
 		case caseValue:
 			v.block.Key().Set(data)
 		case caseAttach:
 			next = caseOpen
 		case caseDeattach:
-			v.block = v.block.PreviousBlock()
+			v.block = v.block.Previous()
 			next = caseOpen
 		}
 	}

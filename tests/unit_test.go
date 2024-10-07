@@ -44,16 +44,13 @@ func TestUnit_Node_DecoderEncoder(t *testing.T) {
 
 	var buf bytes.Buffer
 	enc := encode.New(&buf)
-	if err = enc.Encode(dec.GetBlock()); err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
+	enc.Encode(dec.GetBlock())
 
 	actual := buf.Bytes()
 	if !bytes.Equal(expected, actual) {
-		// fmt.Println("--- want: ---")
-		// fmt.Println(string(expected))
-		// fmt.Println("--- got: ---")
+		fmt.Println("--- want: ---")
+		fmt.Println(string(expected))
+		fmt.Println("--- got: ---")
 		fmt.Println(string(actual))
 		t.FailNow()
 	}

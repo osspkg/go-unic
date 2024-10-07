@@ -33,7 +33,7 @@ func (v *Block) Root() (b *Block) {
 	return
 }
 
-func (v *Block) PreviousBlock() (b *Block) {
+func (v *Block) Previous() (b *Block) {
 	b = v
 	if b.parent != nil {
 		b = v.parent
@@ -46,7 +46,7 @@ func (v *Block) PreviousBlock() (b *Block) {
 	return
 }
 
-func (v *Block) NextBlock() *Block {
+func (v *Block) Next() *Block {
 	b := NewBlock()
 	b.parent = v
 	v.child = append(v.child, b)

@@ -1,7 +1,6 @@
 package encode
 
 import (
-	"bytes"
 	"io"
 
 	"go.osspkg.com/unic/internal/node"
@@ -17,11 +16,9 @@ func New(w io.Writer) *Encoder {
 	}
 }
 
-func (v *Encoder) Encode(b *node.Block) error {
-	buff := bytes.NewBuffer(nil)
+func (v *Encoder) Encode(b *node.Block) {
 	for _, c := range b.Root().Child() {
-		node.DrawBlock(buff, 0, c)
+		node.DrawBlock(v.w, 0, c)
 	}
-	_, err := buff.WriteTo(v.w)
-	return err
+	return
 }

@@ -1,6 +1,6 @@
 package node
 
-func Search(b *Block, keys ...string) *Key {
+func Search(b *Block, keys ...string) *Block {
 	b = b.Root()
 	for _, key := range keys {
 		var has bool
@@ -15,5 +15,5 @@ func Search(b *Block, keys ...string) *Key {
 			return nil
 		}
 	}
-	return b.Key()
+	return b
 }

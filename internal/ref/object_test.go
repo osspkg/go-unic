@@ -55,5 +55,5 @@ func TestUnit_Resolve(t *testing.T) {
 	casecheck.NoError(t, err)
 
 	b := node.NewBlock()
-	casecheck.NoError(t, res.Marshal(b))
+	casecheck.NoError(t, res.Build(b))
 }
