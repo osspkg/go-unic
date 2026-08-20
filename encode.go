@@ -106,7 +106,7 @@ func (e *encoder) writeEmptyBlock(name string) (err error) {
 	return e.writeByte('\n')
 }
 
-func (e *encoder) writeMergedBlock(name string, vals []interface{}, path string) (err error) {
+func (e *encoder) writeMergedBlock(name string, vals []any, path string) (err error) {
 	if err = e.writeIndent(); err != nil {
 		return err
 	}
