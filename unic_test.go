@@ -1,13 +1,13 @@
 package unic
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 )
 
-const readmeConfig = `
-log_level 1;
+const readmeConfig = `log_level 1;
 servers {
 	domains ['localhost', 'local.host'];
 	server web { # веб
@@ -25,6 +25,7 @@ servers {
 		prefix /api/admin/v1; # префикс методов api для админки
 		middleware [log, oauth]; # набор миделвар
 	}
+	authBy [passwd, oauth];
 }
 `
 
@@ -45,7 +46,24 @@ type readmeConfigStruct struct {
 			Prefix     string   `unic:"prefix"`
 			Middleware []string `unic:"middleware"`
 		} `unic:"route"`
+		AuthBy []string `unic:"authBy"`
 	} `unic:"servers,desc='настройки серверов'"`
+}
+
+func TestUnit_Base(t *testing.T) {
+	var cfg readmeConfigStruct
+	if err := Unmarshal([]byte(readmeConfig), &cfg); err != nil {
+		t.Fatal(err)
+	}
+	b, err := Marshal(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	excepted := "log_level 1;\nservers {\n\tdomains [localhost, local.host]; # список доменов\n\tserver web {\n\t\tport 80; # номер порта\n\t\thost 127.0.0.1; # IP или домен\n\t\tttl [1, 2, 3];\n\t\tssl [/etc/ssl/host1.pem, /etc/ssl/host1.pem]; # пути для сертификатов\n\t}\n\tserver admin {\n\t\tport 80; # номер порта\n\t\thost 127.0.0.2; # IP или домен\n\t\tauth (user1, passwd1, user2, passwd2);\n\t}\n\troute admin {\n\t\tprefix /api/admin/v1;\n\t\tmiddleware [log, oauth];\n\t}\n\tauthBy [passwd, oauth];\n}\n"
+	if string(b) != excepted {
+		fmt.Printf("got %q,\n\n want %q", string(b), excepted)
+		t.Errorf("got %s, want %s", string(b), excepted)
+	}
 }
 
 func TestUnit_UnmarshalREADME(t *testing.T) {
@@ -702,13 +720,33 @@ func TestUnit_UnmarshalUnknownFieldsIgnored(t *testing.T) {
 	}
 }
 
+func TestUnit_README_EXAMPLE(t *testing.T) {
+	type Part1 struct {
+		Common string `unic:"common"`
+		A      int    `unic:"a"`
+	}
+	type Part2 struct {
+		Common string `unic:"common"`
+		B      bool   `unic:"b"`
+	}
+
+	data, _ := Marshal(Part1{Common: "shared", A: 42}, Part2{Common: "shared", B: true})
+	excepted := `common shared;
+a 42;
+b true;
+`
+	if string(data) != excepted {
+		t.Fatalf("want=%q\ngot=%q", excepted, data)
+	}
+}
+
 /*
 goos: linux
 goarch: amd64
 pkg: go.osspkg.com/unic
 cpu: 12th Gen Intel(R) Core(TM) i9-12900KF
 Benchmark_Unmarshal
-Benchmark_Unmarshal-24    	  283897	      5598 ns/op	   10318 B/op	     185 allocs/op
+Benchmark_Unmarshal-4   	  299887	      3943 ns/op	   10917 B/op	     199 allocs/op
 PASS
 */
 func Benchmark_Unmarshal(b *testing.B) {
@@ -731,7 +769,7 @@ goarch: amd64
 pkg: go.osspkg.com/unic
 cpu: 12th Gen Intel(R) Core(TM) i9-12900KF
 Benchmark_Marshal
-Benchmark_Marshal-24      	 1685868	       707.7 ns/op	    1363 B/op	      35 allocs/op
+Benchmark_Marshal-4     	 1000000	      1272 ns/op	    1488 B/op	      37 allocs/op
 PASS
 */
 func Benchmark_Marshal(b *testing.B) {

@@ -10,7 +10,7 @@ import (
 )
 
 //nolint:unused
-func mergeValues(a, b interface{}) (interface{}, error) {
+func mergeValues(a, b any) (any, error) {
 	if a == nil && b == nil {
 		return nil, nil
 	}
@@ -55,10 +55,10 @@ func mergeValues(a, b interface{}) (interface{}, error) {
 
 	// Если типы не совпадают (и не обе структуры) -> список
 	if baseA.Type() != baseB.Type() {
-		return []interface{}{a, b}, nil
+		return []any{a, b}, nil
 	}
 
-	var result interface{}
+	var result any
 	var err error
 	switch baseA.Kind() {
 	case reflect.Struct:
@@ -96,7 +96,7 @@ func derefValue(v reflect.Value) reflect.Value {
 }
 
 //nolint:unused
-func mergeStruct(va, vb reflect.Value) (interface{}, error) {
+func mergeStruct(va, vb reflect.Value) (any, error) {
 	t := va.Type()
 	result := reflect.New(t).Elem()
 	result.Set(va)
@@ -124,7 +124,7 @@ func mergeStruct(va, vb reflect.Value) (interface{}, error) {
 }
 
 //nolint:unused
-func mergeMap(va, vb reflect.Value) (interface{}, error) {
+func mergeMap(va, vb reflect.Value) (any, error) {
 	t := va.Type()
 	result := reflect.MakeMap(t)
 
@@ -151,7 +151,7 @@ func mergeMap(va, vb reflect.Value) (interface{}, error) {
 }
 
 //nolint:unused,unparam
-func mergeSlice(va, vb reflect.Value) (interface{}, error) {
+func mergeSlice(va, vb reflect.Value) (any, error) {
 	totalLen := va.Len() + vb.Len()
 	result := reflect.MakeSlice(va.Type(), totalLen, totalLen)
 	reflect.Copy(result, va)
@@ -160,7 +160,7 @@ func mergeSlice(va, vb reflect.Value) (interface{}, error) {
 }
 
 //nolint:unused
-func mergeArray(va, vb reflect.Value) (interface{}, error) {
+func mergeArray(va, vb reflect.Value) (any, error) {
 	if va.Len() != vb.Len() {
 		return vb.Interface(), nil
 	}
@@ -177,13 +177,13 @@ func mergeArray(va, vb reflect.Value) (interface{}, error) {
 }
 
 //nolint:unused
-func structToMap(v reflect.Value) (map[string]interface{}, error) {
+func structToMap(v reflect.Value) (map[string]any, error) {
 	v = derefValue(v)
 	if v.Kind() != reflect.Struct {
 		return nil, errNotStruct
 	}
 	t := v.Type()
-	result := make(map[string]interface{})
+	result := make(map[string]any)
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		if field.PkgPath != "" && !field.Anonymous {
@@ -218,7 +218,7 @@ func structToMap(v reflect.Value) (map[string]interface{}, error) {
 }
 
 //nolint:unused
-func mergeMapValues(a, b map[string]interface{}) (map[string]interface{}, error) {
+func mergeMapValues(a, b map[string]any) (map[string]any, error) {
 	va := reflect.ValueOf(a)
 	vb := reflect.ValueOf(b)
 	if va.Kind() != reflect.Map || vb.Kind() != reflect.Map {
@@ -228,7 +228,7 @@ func mergeMapValues(a, b map[string]interface{}) (map[string]interface{}, error)
 	if err != nil {
 		return nil, err
 	}
-	return mergedVal.(map[string]interface{}), nil
+	return mergedVal.(map[string]any), nil
 }
 
 func hasAttrs(t reflect.Type) (bool, error) {

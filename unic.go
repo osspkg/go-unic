@@ -76,12 +76,13 @@ func decodeTarget(v any) (reflect.Value, error) {
 
 // Marshal returns the UNIC encoding of v.
 // v must be a struct or a non-nil pointer to struct.
-func Marshal(args ...any) ([]byte, error) {
+func Marshal(args ...any) ([]byte, error) { //nolint:gocyclo
 	if len(args) == 0 {
 		return nil, nil
 	}
 
-	fieldsMap := make(map[string][]interface{})
+	fieldsMap := make(map[string][]any)
+	metaList := make([]*structMeta, 0, len(args))
 	for _, arg := range args {
 		rv, err := encodeTarget(arg)
 		if err != nil {
@@ -92,6 +93,8 @@ func Marshal(args ...any) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		metaList = append(metaList, meta)
 
 		for _, bf := range meta.fields {
 			if bf.attr > 0 {
@@ -105,30 +108,56 @@ func Marshal(args ...any) ([]byte, error) {
 		}
 	}
 
-	mergedGroups := make(map[string][]interface{})
+	mergedGroups := make(map[string][]any)
 	for name, vals := range fieldsMap {
-		if len(vals) > 1 {
-			allStructs := true
-			hasAnyAttr := false
-			for _, val := range vals {
-				fv := marshalDeref(reflect.ValueOf(val))
-				if fv.Kind() != reflect.Struct {
-					allStructs = false
-					break
-				}
-				has, err := hasAttrs(fv.Type())
-				if err != nil {
+		if len(vals) <= 1 {
+			continue
+		}
+
+		allScalar := true
+		allStructs := true
+		hasAnyAttr := false
+
+		for _, val := range vals {
+			fv := marshalDeref(reflect.ValueOf(val))
+			if !fv.IsValid() {
+				continue
+			}
+
+			if !allScalar && !allStructs {
+				break
+			}
+
+			k := fv.Kind()
+
+			allStructs = allStructs && k == reflect.Struct
+			if allStructs && !hasAnyAttr {
+				var err error
+				if hasAnyAttr, err = hasAttrs(fv.Type()); err != nil {
 					return nil, err
 				}
-				if has {
-					hasAnyAttr = true
+			}
+
+			allScalar = allScalar && k != reflect.Struct && k != reflect.Map && k != reflect.Slice && k != reflect.Array
+		}
+
+		if allStructs && !hasAnyAttr {
+			mergedGroups[name] = vals
+			delete(fieldsMap, name)
+			continue
+		}
+
+		if allScalar {
+			allEqual := true
+			first := vals[0]
+			for i := 1; i < len(vals); i++ {
+				if !reflect.DeepEqual(first, vals[i]) {
+					allEqual = false
 					break
 				}
 			}
-			if allStructs && !hasAnyAttr {
-				mergedGroups[name] = vals
-				delete(fieldsMap, name)
-				continue
+			if allEqual {
+				fieldsMap[name] = []any{first}
 			}
 		}
 	}
@@ -138,28 +167,37 @@ func Marshal(args ...any) ([]byte, error) {
 
 	e := &encoder{buf: buf}
 
-	for name, vals := range mergedGroups {
-		if err := e.writeMergedBlock(name, vals, ""); err != nil {
-			return nil, err
-		}
-	}
+	for _, meta := range metaList {
+		for _, mf := range meta.fields {
 
-	for name, vals := range fieldsMap {
-		for _, val := range vals {
-			fv := reflect.ValueOf(val)
-			if fv.Kind() == reflect.Ptr && fv.IsNil() {
-				if err := e.writeEmptyBlock(name); err != nil {
+			if vals, ok := mergedGroups[mf.name]; ok {
+				if err := e.writeMergedBlock(mf.name, vals, ""); err != nil {
 					return nil, err
 				}
+				delete(mergedGroups, mf.name)
+			}
+
+			vals, ok := fieldsMap[mf.name]
+			if !ok {
 				continue
 			}
-			fv = marshalDeref(fv)
-			if !fv.IsValid() {
-				continue
-			}
-			f := &boundField{fieldTag: fieldTag{name: name}}
-			if err := e.writeNamed(f, fv, ""); err != nil {
-				return nil, err
+			delete(fieldsMap, mf.name)
+			for _, val := range vals {
+				fv := reflect.ValueOf(val)
+				if fv.Kind() == reflect.Ptr && fv.IsNil() {
+					if err := e.writeEmptyBlock(mf.name); err != nil {
+						return nil, err
+					}
+					continue
+				}
+				fv = marshalDeref(fv)
+				if !fv.IsValid() {
+					continue
+				}
+				f := &boundField{fieldTag: fieldTag{name: mf.name}}
+				if err := e.writeNamed(f, fv, ""); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
