@@ -250,9 +250,12 @@ func (s *scanner) skipComment() error {
 }
 
 func (s *scanner) peekRune() (rune, error) {
-	r, _, err := s.buf.ReadRune()
+	r, size, err := s.buf.ReadRune()
 	if err != nil {
 		return 0, err
+	}
+	if r == utf8.RuneError && size == 1 {
+		return 0, fmt.Errorf("invalid UTF-8 sequence")
 	}
 	if err = s.buf.UnreadRune(); err != nil {
 		return 0, err
@@ -261,9 +264,12 @@ func (s *scanner) peekRune() (rune, error) {
 }
 
 func (s *scanner) readRune() (rune, error) {
-	r, _, err := s.buf.ReadRune()
+	r, size, err := s.buf.ReadRune()
 	if err != nil {
 		return 0, err
+	}
+	if r == utf8.RuneError && size == 1 {
+		return 0, fmt.Errorf("invalid UTF-8 sequence")
 	}
 	s.prevLine, s.prevCol = s.line, s.col
 	if r == '\n' {

@@ -73,6 +73,26 @@ func TestUnit_HelpersEmptyNodeAndAsAny(t *testing.T) {
 	}
 }
 
+func TestUnit_UnmarshalBlockMapNamedStringKey(t *testing.T) {
+	t.Parallel()
+
+	type key string
+	type item struct {
+		Value int `unic:"value"`
+	}
+	type config struct {
+		Items map[key]item `unic:"items"`
+	}
+
+	var got config
+	if err := Unmarshal([]byte("items { alpha { value 7; } }"), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Items[key("alpha")].Value != 7 {
+		t.Fatalf("items=%v", got.Items)
+	}
+}
+
 type ioStrError string
 
 func (e ioStrError) Error() string { return string(e) }

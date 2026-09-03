@@ -31,7 +31,7 @@
 ## 🚀 Features
 
 - **Human‑readable syntax** – intuitive, without superfluous symbols (like Nginx or HCL).
-- **Support for all major Go types**: structs, slices, maps, scalars (numbers, strings, booleans).
+- **Support for the major Go field types**: structs, slices, maps, scalars (numbers, strings, booleans).
 - **Flexible tag‑based control** – set field names, default values, omit empty fields, attributes, comments.
 - **Structure merging** – automatically combine fields when serialising multiple objects with the same key.
 - **Arbitrary nesting depth** – blocks, lists, and maps can be combined freely.
@@ -122,6 +122,9 @@ func main() {
 }
 ```
 
+`Marshal` accepts a struct or a pointer to a struct. Maps, slices, and scalar
+values are supported as fields; a map cannot be passed as the top-level value.
+
 ---
 
 ## 📐 UNIC Syntax
@@ -145,6 +148,9 @@ To avoid conflicts with system characters (`{}[]();,#`), spaces, quotes, or line
 - If the string contains `"`, `{`, `}`, `[`, `]`, `(`, `)`, `#`, `;`, `,` or spaces – enclose it in single quotes: `'hello "world"'`.
 - If the string contains `'`, `{`, `}`, `[`, `]`, `(`, `)`, `#`, `;`, `,` or spaces – enclose it in double quotes: `"hello 'world'"`.
 - If the string contains both `'` and `"` as well as special characters or line breaks – use triple backticks: `` ```hello 'world' "foo"``` ``.
+
+Input must be valid UTF-8. Invalid UTF-8 sequences are rejected with a parse
+error.
 
 Example:
 
@@ -264,7 +270,10 @@ type Config struct {
 
 ### Serialising multiple structs into one file
 
-`unic.Marshal` accepts several arguments – all are merged into one document. If fields with the same name appear in different structs, they are combined (merged) into a single block.
+`unic.Marshal` accepts several struct arguments – all are written into one
+document. Equal repeated scalar values are deduplicated, while struct values
+without attributes and with the same name are combined into one block. Maps,
+slices, and values with attributes are not structurally merged.
 
 ```go
 package main

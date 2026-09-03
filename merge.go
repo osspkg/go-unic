@@ -36,23 +36,6 @@ func mergeValues(a, b any) (any, error) {
 		return a, nil
 	}
 
-	// Если оба — структуры, сливаем их поля через карты
-	if baseA.Kind() == reflect.Struct && baseB.Kind() == reflect.Struct {
-		mapA, err := structToMap(baseA)
-		if err != nil {
-			return nil, err
-		}
-		mapB, err := structToMap(baseB)
-		if err != nil {
-			return nil, err
-		}
-		mergedMap, err := mergeMapValues(mapA, mapB)
-		if err != nil {
-			return nil, err
-		}
-		return mergedMap, nil
-	}
-
 	// Если типы не совпадают (и не обе структуры) -> список
 	if baseA.Type() != baseB.Type() {
 		return []any{a, b}, nil
@@ -116,7 +99,7 @@ func mergeStruct(va, vb reflect.Value) (any, error) {
 			}
 
 			if result.Field(i).CanSet() {
-				result.Field(i).Set(reflect.ValueOf(merged))
+				setMerged(result.Field(i), merged, fvB)
 			}
 		}
 	}
@@ -136,7 +119,7 @@ func mergeMap(va, vb reflect.Value) (any, error) {
 			if err != nil {
 				return nil, err
 			}
-			result.SetMapIndex(key, reflect.ValueOf(merged))
+			result.SetMapIndex(key, mergedValue(merged, valB))
 		} else {
 			result.SetMapIndex(key, valA)
 		}
@@ -171,9 +154,28 @@ func mergeArray(va, vb reflect.Value) (any, error) {
 		if err != nil {
 			return nil, err
 		}
-		result.Index(i).Set(reflect.ValueOf(merged))
+		setMerged(result.Index(i), merged, vb.Index(i))
 	}
 	return result.Interface(), nil
+}
+
+//nolint:unused
+func setMerged(dst reflect.Value, merged any, fallback reflect.Value) {
+	value := mergedValue(merged, fallback)
+	if value.IsValid() && value.Type().AssignableTo(dst.Type()) {
+		dst.Set(value)
+	}
+}
+
+//nolint:unused
+func mergedValue(merged any, fallback reflect.Value) reflect.Value {
+	if merged != nil {
+		value := reflect.ValueOf(merged)
+		if value.IsValid() && value.Type().AssignableTo(fallback.Type()) {
+			return value
+		}
+	}
+	return fallback
 }
 
 //nolint:unused
