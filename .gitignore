@@ -18,3 +18,4 @@ coverage.out
 *.test
 *.out
 .env
+testdata/

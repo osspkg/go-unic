@@ -237,7 +237,9 @@ func decodeBlockMap(dv reflect.Value, n *node, path string) error {
 		if err := decodeValue(el, fl.val, joinPath(path, fl.key)); err != nil {
 			return err
 		}
-		dv.SetMapIndex(reflect.ValueOf(fl.key), el)
+		key := reflect.New(dv.Type().Key()).Elem()
+		key.SetString(fl.key)
+		dv.SetMapIndex(key, el)
 	}
 	return nil
 }
